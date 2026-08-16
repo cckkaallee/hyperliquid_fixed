@@ -42,6 +42,7 @@ defmodule Hyperliquid.Streamer.Stream do
 
   @heartbeat_interval 50_000
   @timeout_seconds 60
+  @max_reconnect_delay_ms 30_000
 
   @workers :worker_registry
   @users :user_registry
@@ -55,28 +56,33 @@ defmodule Hyperliquid.Streamer.Stream do
       subs: subs,
       req_count: 0,
       active_subs: 0,
-      last_response: System.system_time(:second)
+      last_response: System.system_time(:second),
+      heartbeat_timer: nil
     }
 
     WebSockex.start_link(
       Config.ws_url(),
       __MODULE__,
       state,
-      name: via(state)
+      name: via(state),
+      async: true,
+      handle_initial_conn_failure: true
     )
   end
 
   def post(pid, type, payload) do
-    WebSockex.send_frame(pid, {:text,
-      Jason.encode!(%{
-        method: "post",
-        id: Cache.increment(),
-        request: %{
-          type: type,
-          payload: payload
-        }
-      })
-    })
+    WebSockex.send_frame(
+      pid,
+      {:text,
+       Jason.encode!(%{
+         method: "post",
+         id: Cache.increment(),
+         request: %{
+           type: type,
+           payload: payload
+         }
+       })}
+    )
   end
 
   def subscribe(pid, sub) do
@@ -89,11 +95,18 @@ defmodule Hyperliquid.Streamer.Stream do
 
   @impl true
   def handle_connect(_conn, state) do
-    :timer.send_interval(@heartbeat_interval, self(), :send_ping)
+    cancel_heartbeat_timer(state.heartbeat_timer)
+    {:ok, heartbeat_timer} = :timer.send_interval(@heartbeat_interval, self(), :send_ping)
 
     Enum.each(state.subs, &WebSockex.cast(self(), {:add_sub, &1}))
 
-    {:ok, %{state | subs: []}}
+    {:ok,
+     %{
+       state
+       | subs: [],
+         heartbeat_timer: heartbeat_timer,
+         last_response: System.system_time(:second)
+     }}
   end
 
   @impl true
@@ -101,7 +114,10 @@ defmodule Hyperliquid.Streamer.Stream do
     age = System.system_time(:second) - state.last_response
 
     if age > @timeout_seconds do
-      Logger.warning("No response for over #{@timeout_seconds} seconds. Restarting Websocket process.")
+      Logger.warning(
+        "No response for over #{@timeout_seconds} seconds. Restarting Websocket process."
+      )
+
       {:close, state}
     else
       {:reply, {:text, @ping}, state}
@@ -134,9 +150,25 @@ defmodule Hyperliquid.Streamer.Stream do
   end
 
   @impl true
-  def handle_disconnect(reason, state) do
-    IO.puts("Disconnected: #{inspect(reason)}")
-    {:ok, state}
+  def handle_disconnect(%{reason: reason, attempt_number: attempt_number}, state) do
+    delay_ms = reconnect_delay_ms(attempt_number)
+
+    Logger.warning(
+      "WebSocket disconnected; reconnecting " <>
+        "reason=#{inspect(reason)} attempt=#{attempt_number} delay_ms=#{delay_ms}"
+    )
+
+    if delay_ms > 0, do: Process.sleep(delay_ms)
+
+    {:reconnect, state}
+  end
+
+  @doc false
+  def reconnect_delay_ms(attempt_number) when is_integer(attempt_number) and attempt_number <= 1,
+    do: 0
+
+  def reconnect_delay_ms(attempt_number) when is_integer(attempt_number) do
+    min(1_000 * Integer.pow(2, attempt_number - 2), @max_reconnect_delay_ms)
   end
 
   @impl true
@@ -161,11 +193,14 @@ defmodule Hyperliquid.Streamer.Stream do
         req_count: req_count + 1
       })
 
-    broadcast("ws_event", Map.merge(event, %{
-      pid: self(),
-      wid: id,
-      subs: state.subs
-    }))
+    broadcast(
+      "ws_event",
+      Map.merge(event, %{
+        pid: self(),
+        wid: id,
+        subs: state.subs
+      })
+    )
 
     Registry.update_value(@workers, id, fn _ -> new_state end)
 
@@ -187,16 +222,13 @@ defmodule Hyperliquid.Streamer.Stream do
         true ->
           Registry.update_value(@users, state.user, fn _ -> new_subs end)
           state.user
+
         false ->
           Registry.unregister(@users, state.user)
           nil
       end
 
-    new_state = %{state |
-      user: user,
-      subs: new_subs,
-      active_subs: Enum.count(new_subs)
-    }
+    new_state = %{state | user: user, subs: new_subs, active_subs: Enum.count(new_subs)}
 
     Registry.update_value(@workers, state.id, fn _ -> new_state end)
 
@@ -262,6 +294,13 @@ defmodule Hyperliquid.Streamer.Stream do
 
   defp broadcast(channel, event) do
     Phoenix.PubSub.broadcast(PubSub, channel, event)
+  end
+
+  defp cancel_heartbeat_timer(nil), do: :ok
+
+  defp cancel_heartbeat_timer(timer) do
+    :timer.cancel(timer)
+    :ok
   end
 
   @impl true
