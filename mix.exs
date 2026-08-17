@@ -8,7 +8,7 @@ defmodule Hyperliquid.MixProject do
     [
       app: :hyperliquid,
       version: @version,
-      elixir: "~> 1.16",
+      elixir: "~> 1.20.2",
       start_permanent: Mix.env() == :prod,
       package: package(),
       deps: deps(),
@@ -36,16 +36,16 @@ defmodule Hyperliquid.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:phoenix_pubsub, "~> 2.1"},
-      {:httpoison, "~> 1.7"},
-      {:jason, "~> 1.4"},
-      {:websockex, "~> 0.4.3"},
-      {:cachex, "~> 3.6"},
+      {:phoenix_pubsub, "~> 2.2"},
+      {:httpoison, "~> 3.0"},
+      {:jason, "~> 1.4.5"},
+      {:websockex, "~> 0.5.1"},
+      {:cachex, "~> 4.1"},
       {:ex_eip712, "~> 0.3.0"},
-      {:ethers, "~> 0.4.5"},
+      {:ethers, "~> 0.8"},
       {:msgpax, "~> 2.4"},
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:ex_doc, "~> 0.40", only: :dev, runtime: false},
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false}
     ]
   end
 

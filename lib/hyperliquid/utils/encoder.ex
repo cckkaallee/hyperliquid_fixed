@@ -108,7 +108,7 @@ defmodule Hyperliquid.Encoder do
 
   def field(:t, %{t: %{trigger: _}} = value), do: [@fields[:t] | pack_trigger(value[:t])]
   def field(key, value), do: [@fields[key] | pack!(value[key])]
-  def fields([_|_] = keys, value), do: Enum.map(keys, &field(&1, value))
+  def fields([_ | _] = keys, value), do: Enum.map(keys, &field(&1, value))
 
   def pack_orders(orders) do
     Enum.reduce(orders, [@orders, first_byte(orders)], &(&2 ++ pack_order(&1)))
@@ -145,7 +145,11 @@ defmodule Hyperliquid.Encoder do
   end
 
   def pack_modifies(modifies) do
-    Enum.reduce(modifies, [@modifies, first_byte(modifies)], &(&2 ++ [first_byte(&1) | pack_modify(&1)]))
+    Enum.reduce(
+      modifies,
+      [@modifies, first_byte(modifies)],
+      &(&2 ++ [first_byte(&1) | pack_modify(&1)])
+    )
   end
 
   def pack_modify(mod) do
@@ -288,14 +292,14 @@ defmodule Hyperliquid.Encoder do
     |> Base.decode16(case: :lower)
     |> case do
       {:ok, binary} -> binary
-      {:error, _reason} -> raise "Invalid hexadecimal string"
+      :error -> raise "Invalid hexadecimal string"
     end
   end
 
   def add_additional_bytes(nonce, nil) do
     nonce_position = byte_size(<<>>)
 
-    <<>> <> <<0::size(8 * 9)>>
+    (<<>> <> <<0::size(8 * 9)>>)
     |> put_big_uint64(nonce, nonce_position)
     |> put_uint8(0, nonce_position + 8)
   end
@@ -304,24 +308,25 @@ defmodule Hyperliquid.Encoder do
     address_bytes = address_to_bytes(vault_address)
     nonce_position = byte_size(<<>>)
 
-    <<>> <> <<0::size(8 * 29)>>
+    (<<>> <> <<0::size(8 * 29)>>)
     |> put_big_uint64(nonce, nonce_position)
     |> put_uint8(1, nonce_position + 8)
     |> put_bytes(address_bytes, nonce_position + 9)
   end
 
   def put_big_uint64(data, value, position) do
-    <<head::binary-size(position), _::binary-size(8), tail::binary>> = data
+    <<head::binary-size(^position), _::binary-size(8), tail::binary>> = data
     <<head::binary, value::big-integer-size(64), tail::binary>>
   end
 
   def put_uint8(data, value, position) do
-    <<head::binary-size(position), _::size(8), tail::binary>> = data
+    <<head::binary-size(^position), _::size(8), tail::binary>> = data
     <<head::binary, value::integer-size(8), tail::binary>>
   end
 
   def put_bytes(data, bytes, position) do
-    <<head::binary-size(position), _::binary-size(byte_size(bytes)), tail::binary>> = data
+    bytes_size = byte_size(bytes)
+    <<head::binary-size(^position), _::binary-size(^bytes_size), tail::binary>> = data
     <<head::binary, bytes::binary, tail::binary>>
   end
 end

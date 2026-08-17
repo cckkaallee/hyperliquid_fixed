@@ -18,7 +18,9 @@ defmodule Hyperliquid.Cache.Updater do
   end
 
   defp schedule_update do
-    interval = Application.get_env(:hyperliquid, __MODULE__)[:update_interval] || :timer.minutes(5)
+    interval =
+      Application.get_env(:hyperliquid, __MODULE__)[:update_interval] || :timer.minutes(5)
+
     Process.send_after(self(), :update_cache, interval)
   end
 

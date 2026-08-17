@@ -64,7 +64,7 @@ defmodule Hyperliquid.Api.Exchange do
   """
   def place_order(order, grouping \\ "na", vault_address \\ nil)
 
-  def place_order([_|_] = orders, grouping, vault_address) do
+  def place_order([_ | _] = orders, grouping, vault_address) do
     post_action(%{type: "order", grouping: grouping, orders: orders}, vault_address)
   end
 
@@ -85,7 +85,7 @@ defmodule Hyperliquid.Api.Exchange do
       iex> Hyperliquid.Api.Exchange.cancel_orders([%{a: 5, o: 123}, %{a: 5, o: 456}])
       {:ok, %{...}}
   """
-  def cancel_orders([_|_] = cancels, vault_address \\ nil) do
+  def cancel_orders([_ | _] = cancels, vault_address \\ nil) do
     post_action(%{type: "cancel", cancels: cancels}, vault_address)
   end
 
@@ -125,7 +125,7 @@ defmodule Hyperliquid.Api.Exchange do
     post_action(%{type: "cancelByCloid", cancels: [%{asset: asset, cloid: cloid}]}, vault_address)
   end
 
-  def cancel_orders_by_cloid([_|_] = cancels, vault_address \\ nil) do
+  def cancel_orders_by_cloid([_ | _] = cancels, vault_address \\ nil) do
     post_action(%{type: "cancelByCloid", cancels: cancels}, vault_address)
   end
 
@@ -281,7 +281,8 @@ defmodule Hyperliquid.Api.Exchange do
       type: "subAccountTransfer",
       subAccountUser: user,
       isDeposit: is_deposit,
-      usd: amount_usd # MUST BE INT VALUE - 1_000_000 = $1
+      # MUST BE INT VALUE - 1_000_000 = $1
+      usd: amount_usd
     })
   end
 
@@ -333,15 +334,19 @@ defmodule Hyperliquid.Api.Exchange do
   def spot_send(destination, token, amount, time) do
     # use Cache.get_token_key(name) to get the proper token key
     # tokenName:tokenId, e.g. "PURR:0xc1fb593aeffbeb02f85e0308e9956a90"
-    post_action(%{
-      type: "spotSend",
-      hyperliquidChain: if(mainnet?(), do: "Mainnet", else: "Testnet"),
-      signatureChainId: if(mainnet?(), do: to_hex(42_161), else: to_hex(421_614)),
-      destination: Ethers.Utils.to_checksum_address(destination),
-      token: token,
-      amount: amount,
-      time: time
-    }, nil, time)
+    post_action(
+      %{
+        type: "spotSend",
+        hyperliquidChain: if(mainnet?(), do: "Mainnet", else: "Testnet"),
+        signatureChainId: if(mainnet?(), do: to_hex(42_161), else: to_hex(421_614)),
+        destination: Ethers.Utils.to_checksum_address(destination),
+        token: token,
+        amount: amount,
+        time: time
+      },
+      nil,
+      time
+    )
   end
 
   @doc """
@@ -364,14 +369,17 @@ defmodule Hyperliquid.Api.Exchange do
       {:ok, %{...}}
   """
   def withdraw_from_bridge(destination, amount, time) do
-    post_action(%{
-      type: "withdraw3",
-      hyperliquidChain: if(mainnet?(), do: "Mainnet", else: "Testnet"),
-      signatureChainId: if(mainnet?(), do: to_hex(42_161), else: to_hex(421_614)),
-      amount: amount,
-      time: time,
-      destination: Ethers.Utils.to_checksum_address(destination)
-    }, time)
+    post_action(
+      %{
+        type: "withdraw3",
+        hyperliquidChain: if(mainnet?(), do: "Mainnet", else: "Testnet"),
+        signatureChainId: if(mainnet?(), do: to_hex(42_161), else: to_hex(421_614)),
+        amount: amount,
+        time: time,
+        destination: Ethers.Utils.to_checksum_address(destination)
+      },
+      time
+    )
   end
 
   defp set_action_chains(action, true) do

@@ -37,8 +37,8 @@ defmodule Hyperliquid.Interval do
   @week @day * 7
   @month trunc(@day * 30.44)
 
-  def list, do:
-    [
+  def list,
+    do: [
       "1m",
       "3m",
       "5m",

@@ -35,6 +35,10 @@ defmodule Hyperliquid.Config do
   Returns the bridge contract address, used for deposits.
   """
   def bridge_contract do
-    Application.get_env(:hyperliquid, :hl_bridge_contract, "0x2df1c51e09aecf9cacb7bc98cb1742757f163df7")
+    Application.get_env(
+      :hyperliquid,
+      :hl_bridge_contract,
+      "0x2df1c51e09aecf9cacb7bc98cb1742757f163df7"
+    )
   end
 end

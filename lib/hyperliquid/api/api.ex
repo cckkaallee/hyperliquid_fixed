@@ -37,11 +37,16 @@ defmodule Hyperliquid.Api do
       defp secret, do: Config.secret()
 
       def post_action(action), do: post_action(action, nil, get_timestamp(), secret())
-      def post_action(action, vault_address), do: post_action(action, vault_address, get_timestamp(), secret())
-      def post_action(action, vault_address, nonce), do: post_action(action, vault_address, nonce, secret())
+
+      def post_action(action, vault_address),
+        do: post_action(action, vault_address, get_timestamp(), secret())
+
+      def post_action(action, vault_address, nonce),
+        do: post_action(action, vault_address, nonce, secret())
 
       def post_action(%{type: "usdSend"} = action, nil, nonce, secret) do
         signature = Signer.sign_usd_transfer_action(action, mainnet?(), secret)
+
         payload = %{
           action: action,
           nonce: nonce,
@@ -54,6 +59,7 @@ defmodule Hyperliquid.Api do
 
       def post_action(%{type: "spotSend"} = action, nil, nonce, secret) do
         signature = Signer.sign_spot_transfer_action(action, mainnet?(), secret)
+
         payload = %{
           action: action,
           nonce: nonce,
@@ -66,6 +72,7 @@ defmodule Hyperliquid.Api do
 
       def post_action(%{type: "withdraw3"} = action, nil, nonce, secret) do
         signature = Signer.sign_withdraw_from_bridge_action(action, mainnet?(), secret)
+
         payload = %{
           action: action,
           nonce: nonce,
@@ -78,6 +85,7 @@ defmodule Hyperliquid.Api do
 
       def post_action(action, vault_address, nonce, secret) do
         signature = Signer.sign_l1_action(action, vault_address, nonce, mainnet?(), secret)
+
         payload = %{
           action: action,
           nonce: nonce,

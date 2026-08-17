@@ -118,19 +118,27 @@ defmodule Hyperliquid.Orders do
       "gtc" -> %{limit: %{tif: "Gtc"}}
       "ioc" -> %{limit: %{tif: "Ioc"}}
       "alo" -> %{limit: %{tif: "Alo"}}
-      _     -> %{limit: %{tif: type}}
+      _ -> %{limit: %{tif: type}}
     end
   end
 
   def trigger_from_order_type(type) when is_map(type), do: %{trigger: type}
 
-  def market_buy(coin, sz, vault_address \\ nil), do:
-    market_order(coin, sz, true, false, vault_address, nil, @default_slippage)
+  def market_buy(coin, sz, vault_address \\ nil),
+    do: market_order(coin, sz, true, false, vault_address, nil, @default_slippage)
 
-  def market_sell(coin, sz, vault_address \\ nil), do:
-    market_order(coin, sz, false, false, vault_address, nil, @default_slippage)
+  def market_sell(coin, sz, vault_address \\ nil),
+    do: market_order(coin, sz, false, false, vault_address, nil, @default_slippage)
 
-  def market_order(coin, sz, buy?, reduce?, vault_address \\ nil, px \\ nil, slippage \\ @default_slippage) do
+  def market_order(
+        coin,
+        sz,
+        buy?,
+        reduce?,
+        vault_address \\ nil,
+        px \\ nil,
+        slippage \\ @default_slippage
+      ) do
     px = slippage_price(coin, buy?, slippage, px)
     trigger = trigger_from_order_type("ioc")
     asset = Cache.asset_from_coin(coin)
@@ -150,6 +158,7 @@ defmodule Hyperliquid.Orders do
   end
 
   def market_close(position, slippage \\ @default_slippage, vault_address \\ nil)
+
   def market_close(address, slippage, vault_address) when is_binary(address) do
     {:ok, %{"assetPositions" => positions}} = Info.clearinghouse_state(address)
 
