@@ -25,6 +25,7 @@ defmodule Hyperliquid.Orders.PriceConverter do
       {:ok, "0.00012345"}
   """
   def convert_price(price, type \\ :perp)
+
   def convert_price(price, type) when type in [:perp, :spot] do
     cond do
       is_binary(price) ->
@@ -84,9 +85,9 @@ defmodule Hyperliquid.Orders.PriceConverter do
       |> Float.to_string()
       |> String.split(".")
       |> case do
-           [_whole] -> 0
-           [_whole, fraction] -> String.length(fraction)
-         end
+        [_whole] -> 0
+        [_whole, fraction] -> String.length(fraction)
+      end
 
     decimal_places <= max_decimal_places
   end

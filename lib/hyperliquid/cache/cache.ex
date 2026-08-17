@@ -33,15 +33,17 @@ defmodule Hyperliquid.Cache do
     spot_pairs = Map.get(spot_meta, "universe")
     tokens = Map.get(spot_meta, "tokens")
 
-    asset_map = Map.merge(
-      create_asset_map(meta),
-      create_asset_map(spot_meta, 10_000)
-    )
+    asset_map =
+      Map.merge(
+        create_asset_map(meta),
+        create_asset_map(spot_meta, 10_000)
+      )
 
-    decimal_map = Map.merge(
-      create_decimal_map(meta),
-      create_decimal_map(spot_meta, 8)
-    )
+    decimal_map =
+      Map.merge(
+        create_decimal_map(meta),
+        create_decimal_map(spot_meta, 8)
+      )
 
     Cachex.put!(@cache, :meta, meta)
     Cachex.put!(@cache, :spot_meta, spot_meta)
@@ -55,16 +57,16 @@ defmodule Hyperliquid.Cache do
     Cachex.put!(@cache, :spot_ctxs, spot_ctxs)
   end
 
-  def meta,         do: Cache.get(:meta)
-  def spot_meta,    do: Cache.get(:spot_meta)
-  def all_mids,     do: Cache.get(:all_mids)
-  def asset_map,    do: Cache.get(:asset_map)
-  def decimal_map,  do: Cache.get(:decimal_map)
-  def perps,        do: Cache.get(:perps)
-  def spot_pairs,   do: Cache.get(:spot_pairs)
-  def tokens,       do: Cache.get(:tokens)
-  def ctxs,         do: Cache.get(:ctxs)
-  def spot_ctxs,    do: Cache.get(:spot_ctxs)
+  def meta, do: Cache.get(:meta)
+  def spot_meta, do: Cache.get(:spot_meta)
+  def all_mids, do: Cache.get(:all_mids)
+  def asset_map, do: Cache.get(:asset_map)
+  def decimal_map, do: Cache.get(:decimal_map)
+  def perps, do: Cache.get(:perps)
+  def spot_pairs, do: Cache.get(:spot_pairs)
+  def tokens, do: Cache.get(:tokens)
+  def ctxs, do: Cache.get(:ctxs)
+  def spot_ctxs, do: Cache.get(:spot_ctxs)
 
   ###### Setters ######
   defp create_asset_map(data, buffer \\ 0) do
@@ -109,27 +111,34 @@ defmodule Hyperliquid.Cache do
   def asset_from_coin(coin), do: Cache.get(:asset_map)[coin]
   def decimals_from_coin(coin), do: Cache.get(:decimal_map)[coin]
 
-  def get_token_by_index(index), do:
-    Cache.get(:tokens)
-    |> Enum.find(& &1["index"] == index)
+  def get_token_by_index(index),
+    do:
+      Cache.get(:tokens)
+      |> Enum.find(&(&1["index"] == index))
 
-  def get_token_by_name(name), do:
-    Cache.get(:tokens)
-    |> Enum.find(& &1["name"] == name)
+  def get_token_by_name(name),
+    do:
+      Cache.get(:tokens)
+      |> Enum.find(&(&1["name"] == name))
 
-  def get_token_by_address(address), do:
-    Cache.get(:tokens)
-    |> Enum.find(& &1["tokenId"] == address)
+  def get_token_by_address(address),
+    do:
+      Cache.get(:tokens)
+      |> Enum.find(&(&1["tokenId"] == address))
 
-  def get_token_name_by_index(index), do:
-    get_token_by_index(index)
-    |> Map.get("name")
+  def get_token_name_by_index(index),
+    do:
+      get_token_by_index(index)
+      |> Map.get("name")
 
-  def get_token_key(token) when is_map(token), do: "#{Map.get(token, "name")}:#{Map.get(token, "tokenId")}"
-  def get_token_key(name), do:
-    name
-    |> get_token_by_name()
-    |> get_token_key()
+  def get_token_key(token) when is_map(token),
+    do: "#{Map.get(token, "name")}:#{Map.get(token, "tokenId")}"
+
+  def get_token_key(name),
+    do:
+      name
+      |> get_token_by_name()
+      |> get_token_key()
 
   def increment, do: Cache.incr(:post_count)
 

@@ -46,7 +46,7 @@ defmodule Hyperliquid.Signer do
   end
 
   def prepare_data(message, chain_id) do
-    Jason.encode! %{
+    Jason.encode!(%{
       domain: %{
         chainId: to_full_hex(chain_id),
         name: "Exchange",
@@ -67,11 +67,12 @@ defmodule Hyperliquid.Signer do
       },
       primaryType: "Agent",
       message: message
-    }
+    })
   end
 
   def sign_user_signed_action(action, payload_types, primary_type, mainnet?, secret) do
     chain_id = if(mainnet?, do: to_hex(42_161), else: to_hex(421_614))
+
     action =
       Map.merge(action, %{
         hyperliquidChain: if(mainnet?, do: "Mainnet", else: "Testnet"),
@@ -79,25 +80,26 @@ defmodule Hyperliquid.Signer do
         time: to_hex(action.time)
       })
 
-    data = Jason.encode! %{
-      domain: %{
-        name: "HyperliquidSignTransaction",
-        version: "1",
-        chainId: chain_id,
-        verifyingContract: @zero_address
-      },
-      types: %{
-        "#{primary_type}": payload_types,
-        EIP712Domain: [
-          %{name: "name", type: "string"},
-          %{name: "version", type: "string"},
-          %{name: "chainId", type: "uint256"},
-          %{name: "verifyingContract", type: "address"}
-        ]
-      },
-      primaryType: primary_type,
-      message: action
-    }
+    data =
+      Jason.encode!(%{
+        domain: %{
+          name: "HyperliquidSignTransaction",
+          version: "1",
+          chainId: chain_id,
+          verifyingContract: @zero_address
+        },
+        types: %{
+          "#{primary_type}": payload_types,
+          EIP712Domain: [
+            %{name: "name", type: "string"},
+            %{name: "version", type: "string"},
+            %{name: "chainId", type: "uint256"},
+            %{name: "verifyingContract", type: "address"}
+          ]
+        },
+        primaryType: primary_type,
+        message: action
+      })
 
     case EIP712.sign(data, trim_0x(secret)) do
       {:ok, hex_signature} -> split_sig(hex_signature)
@@ -113,7 +115,7 @@ defmodule Hyperliquid.Signer do
         %{name: "destination", type: "string"},
         %{name: "token", type: "string"},
         %{name: "amount", type: "string"},
-        %{name: "time", type: "uint64"},
+        %{name: "time", type: "uint64"}
       ],
       "HyperliquidTransaction:SpotSend",
       mainnet?,
@@ -128,7 +130,7 @@ defmodule Hyperliquid.Signer do
         %{name: "hyperliquidChain", type: "string"},
         %{name: "destination", type: "string"},
         %{name: "amount", type: "string"},
-        %{name: "time", type: "uint64"},
+        %{name: "time", type: "uint64"}
       ],
       "HyperliquidTransaction:UsdSend",
       mainnet?,
@@ -143,7 +145,7 @@ defmodule Hyperliquid.Signer do
         %{name: "hyperliquidChain", type: "string"},
         %{name: "destination", type: "string"},
         %{name: "amount", type: "string"},
-        %{name: "time", type: "uint64"},
+        %{name: "time", type: "uint64"}
       ],
       "HyperliquidTransaction:Withdraw",
       mainnet?,

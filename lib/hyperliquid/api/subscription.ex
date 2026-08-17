@@ -5,16 +5,16 @@ defmodule Hyperliquid.Api.Subscription do
   alias Hyperliquid.Utils
 
   @type subscription :: %{
-    type: String.t(),
-    user: String.t() | nil,
-    coin: String.t() | nil,
-    interval: String.t() | nil
-  }
+          type: String.t(),
+          user: String.t() | nil,
+          coin: String.t() | nil,
+          interval: String.t() | nil
+        }
 
   @type subscription_message :: %{
-    method: String.t(),
-    subscription: subscription()
-  }
+          method: String.t(),
+          subscription: subscription()
+        }
 
   # topics
   def general_topics, do: ["allMids", "explorerBlock", "explorerTxs"]
@@ -48,7 +48,8 @@ defmodule Hyperliquid.Api.Subscription do
   # COIN #
   def candle(coin, interval), do: %{type: "candle", coin: coin, interval: interval}
 
-  def l2_book(coin, sig_figs \\ 5, mantissa \\ nil), do: %{type: "l2Book", coin: coin, nSigFigs: sig_figs, mantissa: mantissa}
+  def l2_book(coin, sig_figs \\ 5, mantissa \\ nil),
+    do: %{type: "l2Book", coin: coin, nSigFigs: sig_figs, mantissa: mantissa}
 
   def trades(coin), do: %{type: "trades", coin: coin}
 
@@ -67,7 +68,8 @@ defmodule Hyperliquid.Api.Subscription do
 
   def web_data(user), do: %{type: "webData2", user: user}
 
-  def user_non_funding_ledger_updates(user), do: %{type: "userNonFundingLedgerUpdates", user: user}
+  def user_non_funding_ledger_updates(user),
+    do: %{type: "userNonFundingLedgerUpdates", user: user}
 
   def user_historical_orders(user), do: %{type: "userHistoricalOrders", user: user}
 

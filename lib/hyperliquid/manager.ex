@@ -52,17 +52,19 @@ defmodule Hyperliquid.Manager do
 
   def get_subbed_users, do: Registry.select(@users, [{{:"$1", :_, :_}, [], [:"$1"]}])
 
-  def get_active_non_user_subs, do:
-    @workers
-    |> Registry.select([{{:_, :_, :"$3"}, [], [:"$3"]}])
-    |> Enum.flat_map(& &1.subs)
-    |> Enum.filter(&!Map.has_key?(&1, :user))
+  def get_active_non_user_subs,
+    do:
+      @workers
+      |> Registry.select([{{:_, :_, :"$3"}, [], [:"$3"]}])
+      |> Enum.flat_map(& &1.subs)
+      |> Enum.filter(&(!Map.has_key?(&1, :user)))
 
-  def get_active_user_subs, do:
-    @users
-    |> Registry.select([{{:_, :_, :"$3"}, [], [:"$3"]}])
-    |> Enum.flat_map(& &1)
-    |> Enum.filter(&Map.has_key?(&1, :user))
+  def get_active_user_subs,
+    do:
+      @users
+      |> Registry.select([{{:_, :_, :"$3"}, [], [:"$3"]}])
+      |> Enum.flat_map(& &1)
+      |> Enum.filter(&Map.has_key?(&1, :user))
 
   def get_all_active_subs, do: get_active_user_subs() ++ get_active_non_user_subs()
 
@@ -70,21 +72,23 @@ defmodule Hyperliquid.Manager do
 
   def get_worker_ids, do: get_worker_pids() |> Enum.flat_map(&Registry.keys(@workers, &1))
 
-  def get_workers, do:
-    Supervisor
-    |> DynamicSupervisor.which_children()
-    |> Enum.map(&elem(&1, 1))
+  def get_workers,
+    do:
+      Supervisor
+      |> DynamicSupervisor.which_children()
+      |> Enum.map(&elem(&1, 1))
 
   def get_worker_pid_by_sub(match_sub), do: get_pid_by_sub(@workers, match_sub)
 
   def get_pid_by_sub(registry, match_sub) do
-    results = Registry.select(registry, [
-      {{:"$1", :"$2", :"$3"}, [], [{{:"$2", :"$3"}}]}
-    ])
+    results =
+      Registry.select(registry, [
+        {{:"$1", :"$2", :"$3"}, [], [{{:"$2", :"$3"}}]}
+      ])
 
     case Enum.find(results, fn {_pid, state} ->
-      Enum.any?(state.subs, fn sub -> sub == match_sub end)
-    end) do
+           Enum.any?(state.subs, fn sub -> sub == match_sub end)
+         end) do
       {pid, _state} -> pid
       nil -> {:error, :not_found}
     end
@@ -110,7 +114,7 @@ defmodule Hyperliquid.Manager do
     |> Enum.member?(address)
     |> case do
       true -> Logger.warning("already subbed to user")
-      _    -> Subscription.make_user_subs(address, coin) |> Supervisor.start_stream()
+      _ -> Subscription.make_user_subs(address, coin) |> Supervisor.start_stream()
     end
   end
 
@@ -119,7 +123,7 @@ defmodule Hyperliquid.Manager do
 
     case id do
       nil -> Logger.warning("not a worker pid")
-      _   -> Registry.values(@workers, id, pid) |> Enum.at(0)
+      _ -> Registry.values(@workers, id, pid) |> Enum.at(0)
     end
     |> Map.get(:subs)
     |> Enum.map(&Stream.unsubscribe(pid, &1))
